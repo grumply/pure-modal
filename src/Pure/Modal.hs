@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternSynonyms, ExistentialQuantification, ViewPatterns, MultiParamTypeClasses, TypeFamilies, DuplicateRecordFields, RecordWildCards, CPP, DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms, ExistentialQuantification, ViewPatterns, MultiParamTypeClasses, TypeFamilies, DuplicateRecordFields, RecordWildCards, CPP, DeriveGeneric, OverloadedStrings, FlexibleContexts #-}
 module Pure.Modal where
 
 import Pure hiding (Open,Content_,Content)
