@@ -1,28 +1,31 @@
 name:                pure-modal
-version:             0.7.0.0
-synopsis: 
-homepage:            github.com/grumply/pure-modal
+version:             0.8.0.0
+homepage:            purehs.org/doc/pure-modal
 license:             BSD3
 license-file:        LICENSE
-author:              Sean Mackenzie
-maintainer:          sean@grump.ly
+author:              Sean Hickman
+maintainer:          sean@grumply.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+
+source-repository head
+  type: git
+  location: https://github.com/grumply/pure-modal.git
 
 library
   exposed-modules:
       Pure.Modal
 
   build-depends:
-      base >=4.8
-    , pure >= 0.7 && < 1
-    , pure-cond >= 0.7 && < 1
-    , pure-css >= 0.7 && < 1
-    , pure-prop >= 0.7 && < 1
-    , pure-portal >= 0.7 && < 1
-    , pure-theme >= 0.7 && < 1
-    , pure-lifted >= 0.7 && < 1
+      base
+    , pure
+    , pure-cond
+    , pure-css
+    , pure-prop
+    , pure-portal
+    , pure-theme
+    , pure-lifted
 
   hs-source-dirs:      src
   default-language:    Haskell2010
