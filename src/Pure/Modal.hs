@@ -1,12 +1,14 @@
-{-# LANGUAGE PatternSynonyms, ExistentialQuantification, ViewPatterns, MultiParamTypeClasses, TypeFamilies, DuplicateRecordFields, RecordWildCards, CPP, DeriveGeneric, OverloadedStrings, FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms, ExistentialQuantification, ViewPatterns, 
+    MultiParamTypeClasses, TypeFamilies, DuplicateRecordFields, 
+    RecordWildCards, CPP, DeriveGeneric, OverloadedStrings, FlexibleContexts, 
+    TypeApplications, ScopedTypeVariables #-}
 module Pure.Modal where
 
 import Pure hiding (Open,Content_,Content)
 import Pure.Portal as Portal hiding (child)
 import Pure.Data.Prop
 import Pure.Data.Cond
-import Pure.Theme
-import Pure.Data.CSS
+import Pure.Theme as CSS
 import Pure.Data.Lifted
 
 import Control.Arrow ((&&&))
@@ -42,7 +44,7 @@ data Modal = Modal_
     , themed :: SomeModalT
     } deriving (Generic)
 
-data SomeModalT = forall t. Themeable t => SomeModalT t
+data SomeModalT = forall t. Theme t => SomeModalT t
 instance Default SomeModalT where
     def = SomeModalT ModalT 
 
@@ -153,6 +155,7 @@ instance Pure Modal where
                     handlePortalUnmount
                 , render = \Modal_ {..} MS {..} ->
                     let
+
                         dimmerClasses
                           | isJust dimmer =
                                 [ (dimmer == Just "inverted") # "inverted"
@@ -171,21 +174,23 @@ instance Pure Modal where
                                     , "modal transition visible active"
                                     ]
 
-                            in
-                                as (f $ features & Classes cs & Styles ss & Lifecycle (HostRef handleRef)) children
+                            in case themed of
+                                SomeModalT t ->
+                                    as (f $ features & CSS.themed t & Classes cs & Styles ss & Lifecycle (HostRef handleRef)) children
 
-                    in (View :: Portal.Portal -> View) $ Portal.Portal $ withPortal $ def
-                        & (closeOnDocumentClick ? CloseOnDocumentClick True $ id)
-                        & (closeOnDimmerClick   ? CloseOnRootNodeClick True $ id)
-                        & Portal.PortalNode viewContent
-                        & MountNode mountNode
-                        & Classes dimmerClasses
-                        & Open active
-                        & Portal.OnClose handleClose
-                        & OnMount handlePortalMount
-                        & OnOpen handleOpen
-                        & OnUnmounted handlePortalUnmount
-                        & Children [ trigger ]
+                    in 
+                            (View :: Portal.Portal -> View) $ Portal.Portal $ withPortal $ def
+                                & (closeOnDocumentClick ? CloseOnDocumentClick True $ id)
+                                & (closeOnDimmerClick   ? CloseOnRootNodeClick True $ id)
+                                & Portal.PortalNode viewContent
+                                & MountNode mountNode
+                                & Classes dimmerClasses
+                                & Open active
+                                & Portal.OnClose handleClose
+                                & OnMount handlePortalMount
+                                & OnOpen handleOpen
+                                & OnUnmounted handlePortalUnmount
+                                & Children [ trigger ]
                 }
 
 #ifdef __GHCJS__
@@ -259,8 +264,8 @@ boundingRect node = do
 #endif
 
 data ModalT = ModalT
-instance Themeable ModalT where
-    theme c _ = do
+instance Theme ModalT where
+    theme c = do
         is c $ do
             apply $ do
                 fontSize =: rems 1
