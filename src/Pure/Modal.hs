@@ -1,14 +1,14 @@
 {-# LANGUAGE PatternSynonyms, ExistentialQuantification, ViewPatterns, 
     MultiParamTypeClasses, TypeFamilies, DuplicateRecordFields, 
     RecordWildCards, CPP, DeriveGeneric, OverloadedStrings, FlexibleContexts, 
-    TypeApplications, ScopedTypeVariables #-}
+    TypeApplications, ScopedTypeVariables, PostfixOperators #-}
 module Pure.Modal where
 
-import Pure hiding (Open,Content_,Content)
+import Pure hiding (Open,Content_,Content,(#))
 import Pure.Portal as Portal hiding (child)
 import Pure.Data.Prop
 import Pure.Data.Cond
-import Pure.Theme as CSS
+import Pure.Theme as CSS hiding ((#))
 import Pure.Data.Lifted
 
 import Control.Arrow ((&&&))
@@ -20,6 +20,8 @@ import Data.Maybe
 import GHC.Generics as G
 
 import Data.Function ((&))
+
+import Prelude hiding (rem)
 
 data Modal = Modal_
     { as :: Features -> [View] -> View
@@ -37,7 +39,7 @@ data Modal = Modal_
     , onUnmount :: IO ()
     , open :: Bool
     , scrollable :: Bool
-    , size :: Txt
+    , size_ :: Txt
     , styles :: [(Txt,Txt)]
     , withPortal :: Portal.Portal -> Portal.Portal
     , trigger :: View
@@ -62,7 +64,7 @@ pattern Modal m = m
 
 data ModalState = MS
     { topMargin :: Maybe Int
-    , scrolling :: Maybe Bool
+    , scrolling_ :: Maybe Bool
     , active :: Bool
     , ref :: IORef (Maybe JSV)
     , pendingAnimation :: IORef (IO ())
@@ -70,7 +72,7 @@ data ModalState = MS
 
 instance Pure Modal where
     view =
-        LibraryComponentIO $ \self ->
+        Component $ \self ->
             let
                 getMountNode = do
                     Modal_ {..} <- ask self
@@ -93,7 +95,7 @@ instance Pure Modal where
 
                 handlePortalMount = do
                     Modal_ {..} <- ask self
-                    modify_ self $ \_ MS {..} -> MS { scrolling = Just False, .. }
+                    modify_ self $ \_ MS {..} -> MS { scrolling_ = Just False, .. }
                     setPositionAndClassNames
                     onMount
 
@@ -125,7 +127,7 @@ instance Pure Modal where
                       let topMargin' = negate (round (h / 2))
                           scrolling' = h >= fromIntegral ih
 
-                          scrollingChange = scrolling /= Just scrolling'
+                          scrollingChange = scrolling_ /= Just scrolling'
                           topMarginChange = topMargin /= Just topMargin'
 
                       when scrollingChange $
@@ -135,7 +137,7 @@ instance Pure Modal where
                       (scrollingChange || topMarginChange) #
                         modify_ self (\_ MS {..} ->
                           MS { topMargin = Just topMargin'
-                             , scrolling = Just scrolling'
+                             , scrolling_ = Just scrolling'
                              , ..
                              })
 
@@ -165,12 +167,12 @@ instance Pure Modal where
 
                         viewContent f =
                             let
-                                ss = maybe [] (\tm -> [(marginTop,pxs tm)]) topMargin
+                                ss = maybe [] (\tm -> [(margin-top,pxs tm)]) topMargin
 
                                 cs =
-                                    [ size
+                                    [ size_
                                     , basic # "basic"
-                                    , (scrolling == Just True) # "scrolling"
+                                    , (scrolling_ == Just True) # "scrolling"
                                     , "modal transition visible active"
                                     ]
 
@@ -268,36 +270,38 @@ instance Theme ModalT where
     theme c = do
         is c $ do
             apply $ do
-                fontSize =: rems 1
+                font-size =: 1rem
                 display =: none
-                zIndex =: int 1001
-                textAlign =: left
-                background =: "#FFFFFF"
+                z-index =: 1001
+                text-align =: left
+                background =: hex 0xFFF
                 border =: none
-                for [ "-webkit-box-shadow", "box-shadow" ] $ \bs ->
-                    bs =: pxs 1 <<>> pxs 3 <<>> pxs 3 <<>> pxs 0 <<>> rgba(0,0,0,0.2) <&>> pxs 1 <<>> pxs 3 <<>> pxs 15 <<>> pxs 2 <<>> rgba(0,0,0,0.2)
+                for [ webkit-box-shadow, box-shadow ] $ \bs ->
+                    bs =* [1px,3px, 3px,0px,rgba(0,0,0,0.2),","
+                          ,1px,3px,15px,2px,rgba(0,0,0,0.2)
+                          ]
                 for [ "-webkit-transform-origin" , "transform-origin"] $ \to ->
-                    to =: per 50 <<>> per 25
-                "-webkit-box-flex" =: zero
-                for [ "-ms-flex", "flex" ] $ \f ->
-                    f =: zero <<>> zero <<>> auto 
-                borderRadius =: rems 0.28571429
-                for_ [ "-webkit-user-slect", "-moz-user-select", "-ms-user-select", "user-select"] $ \us ->
-                    us =: "text"
-                "will-change" =: top <&>> left <&>> margin <&>> transform <&>> opacity
+                    to =* [(50%),(25%)]
+                webkit-box-flex =: 0
+                for [ microsoft-flex, flex ] $ \f ->
+                    f =* [0,0,auto]
+                border-radius =: 0.28571429rem
+                for_ [ webkit-user-select, moz-user-select, microsoft-user-select, user-select] $ \us ->
+                    us =: text
+                will-change =: elems [top,left,margin,transform,opacity]
 
             is ".basic" .> do
-                backgroundColor =: transparent
+                background-color =: transparent
                 border =: none
-                borderRadius =: ems 0
-                important $ "-webkit-box-shadow" =: none
-                important $ "box-shadow" =: none
-                color =: "#FFFFFF"
+                border-radius =: 0em
+                important $ webkit-box-shadow =: none
+                important $ box-shadow =: none
+                color =: hex 0xFFF
 
             is ".loading" .> do
                 display =: block
                 visibility =: hidden
-                zIndex =: neg one
+                z-index =: (-1)
 
             is ".active" .> do
                 display =: block
@@ -306,13 +310,13 @@ instance Theme ModalT where
                 apply $ overflow =: hidden
 
                 child ".dimmer" .> do
-                    for [ "-webkit-box-pack", "-ms-flex-pack" ] $ \jc ->
-                        jc =: "start"
-                    "justify-content" =: "flex-start"
+                    for [ webkit-box-pack, microsoft-flex-pack ] $ \jc ->
+                        jc =: start
+                    justify-content =: flex-start
                 
                 is ".dimmed" . has ".dimmer" .> do
                     overflow =: auto
-                    "-webkit-overflow-scrolling" =: "touch"
+                    webkit-overflow-scrolling =: touch
 
                 has ".dimmer" .> position =: fixed
 
@@ -321,52 +325,54 @@ instance Theme ModalT where
                 atMedia ("only screen and " <<>> sel) $ is c .> do
                 width =: wid
                 margin =: ems 0 <<>> ems 0 <<>> ems 0 <<>> ems 0
-        responsive "(max-width: 767px)" (per 95)
-        responsive "(min-width: 768px)" (per 88)
-        responsive "(min-width: 992px)" (pxs 850)
-        responsive "(min-width: 1200px)" (pxs 900)
-        responsive "(min-width: 1920px)" (pxs 950)
+        responsive "(max-width: 767px)" (95%)
+        responsive "(min-width: 768px)" (88%)
+        responsive "(min-width: 992px)" (850px)
+        responsive "(min-width: 1200px)" (900px)
+        responsive "(min-width: 1920px)" (950px)
 
         let responsive sel siz wid = void $ 
                 atMedia ("only screen and " <<>> sel) $ is c . is siz .> do
-                width =: wid
-                margin =: ems 0 <<>> ems 0 <<>> ems 0 <<>> ems 0
-        responsive "(max-width: 767px)" ".mini" (per 95)
-        responsive "(min-width: 768px)" ".mini" (per 35.2)
-        responsive "(min-width: 992px)" ".mini" (pxs 340)
-        responsive "(min-width: 1200px)" ".mini" (pxs 360)
-        responsive "(min-width: 1920px)" ".mini" (pxs 380)
+                    width  =: wid
+                    margin =* [0em,0em,0em,0em]
 
-        responsive "(max-width: 767px)" ".tiny" (per 95)
-        responsive "(min-width: 768px)" ".tiny" (per 52.8)
-        responsive "(min-width: 992px)" ".tiny" (pxs 510)
-        responsive "(min-width: 1200px)" ".tiny" (pxs 540)
-        responsive "(min-width: 1920px)" ".tiny" (pxs 570)
+        responsive "(max-width: 767px)" ".mini" (95%)
+        responsive "(min-width: 768px)" ".mini" (35.2%)
+        responsive "(min-width: 992px)" ".mini" (340px)
+        responsive "(min-width: 1200px)" ".mini" (360px)
+        responsive "(min-width: 1920px)" ".mini" (380px)
 
-        responsive "(max-width: 767px)" ".small" (per 95)
-        responsive "(min-width: 768px)" ".small" (per 70.4)
-        responsive "(min-width: 992px)" ".small" (pxs 680)
-        responsive "(min-width: 1200px)" ".small" (pxs 720)
-        responsive "(min-width: 1920px)" ".small" (pxs 760)
+        responsive "(max-width: 767px)" ".tiny" (95%)
+        responsive "(min-width: 768px)" ".tiny" (52.8%)
+        responsive "(min-width: 992px)" ".tiny" (510px)
+        responsive "(min-width: 1200px)" ".tiny" (540px)
+        responsive "(min-width: 1920px)" ".tiny" (570px)
 
-        responsive "(max-width: 767px)" ".large" (per 95)
-        responsive "(min-width: 768px)" ".large" (per 88)
-        responsive "(min-width: 992px)" ".large" (pxs 1020)
-        responsive "(min-width: 1200px)" ".large" (pxs 1080)
-        responsive "(min-width: 1920px)" ".large" (pxs 1140)
+        responsive "(max-width: 767px)" ".small" (95%)
+        responsive "(min-width: 768px)" ".small" (70.4%)
+        responsive "(min-width: 992px)" ".small" (680px)
+        responsive "(min-width: 1200px)" ".small" (720px)
+        responsive "(min-width: 1920px)" ".small" (760px)
+
+        responsive "(max-width: 767px)" ".large" (95%)
+        responsive "(min-width: 768px)" ".large" (88%)
+        responsive "(min-width: 992px)" ".large" (1020px)
+        responsive "(min-width: 1200px)" ".large" (1080px)
+        responsive "(min-width: 1920px)" ".large" (1140px)
 
         is ".dimmer" $ do
             child c $ apply $ do
-                for_ [ "-webkit-box-shadow", "box-shadow" ] $ \bs ->
-                    bs =: pxs 1 <<>> pxs 3 <<>> pxs 10 <<>> pxs 2 <<>> rgba(0,0,0,0.2)
+                for_ [ webkit-box-shadow, box-shadow ] $ \bs ->
+                    bs =* [1px,3px,10px,2px,rgba(0,0,0,0.2)]
 
             is ".top" . is ".aligned" . has c .> do
-                margin =: vhs 5 <<>> auto
+                margin =* [5vh,auto]
 
             is ".inverted" . child c .> do
                 color =: rgba(0,0,0,0.87)
 
-        void $ is ".modals" . is ".dimmer" . has ".scrolling" . is c .> important (margin =: rems 1 <<>> auto)
+        void $ is ".modals" . is ".dimmer" . has ".scrolling" . is c .> 
+            important $ margin =* [1rem,auto]
 
 data As = As_
 pattern As :: HasProp As a => Prop As a -> a -> a
@@ -488,8 +494,8 @@ instance HasProp Scrollable Modal where
 
 instance HasProp Size Modal where
     type Prop Size Modal = Txt
-    getProp _ = size
-    setProp _ s m = m { size = s }
+    getProp _ = size_
+    setProp _ s m = m { size_ = s }
 
 instance HasProp WithPortal Modal where
     type Prop WithPortal Modal = Portal.Portal -> Portal.Portal
