@@ -20,12 +20,30 @@ library
   build-depends:
       base
     , pure
-    , pure-cond
-    , pure-css
+    , pure-elm
     , pure-prop
-    , pure-portal
-    , pure-theme
     , pure-lifted
+
+  default-extensions:
+    AllowAmbiguousTypes
+    BlockArguments
+    CPP
+    DataKinds
+    DeriveGeneric
+    DuplicateRecordFields
+    ExistentialQuantification
+    FlexibleContexts
+    LambdaCase
+    MultiParamTypeClasses
+    OverloadedStrings
+    PatternSynonyms
+    PostfixOperators
+    RecordWildCards
+    ScopedTypeVariables
+    TemplateHaskell
+    TypeApplications
+    TypeFamilies
+    ViewPatterns
 
   hs-source-dirs:      src
   default-language:    Haskell2010
