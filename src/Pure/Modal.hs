@@ -136,7 +136,7 @@ data Model = Model
 data Msg = SetNode Node | Toggle | Receive | Shutdown
 
 instance Pure Modal where
-  view m = run (App [] [Receive] [Shutdown] mdl upon render) m
+  view m = run (App [] [Receive] [Shutdown] (pure mdl) upon render) m
     where
       mdl = Model False (coerce nullJSV) id
 
