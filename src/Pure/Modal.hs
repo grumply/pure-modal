@@ -188,6 +188,7 @@ instance Pure Modal where
         (onStatus modal) (command Toggle) (ref model) (Unmounted (active model))
         pure model
       
+      render :: Elm Msg => Modal -> Model -> View
       render Modal_ {..} Model {..} =
         let 
           fs = someThemed variant 
